@@ -1,0 +1,15 @@
+.env
+logs/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/.user.yml
+.DS_Store
+.idea/
+.vscode/

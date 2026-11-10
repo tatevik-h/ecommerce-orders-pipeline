@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: int_order_lifecycle
+    description: One row per order with the timestamp of each lifecycle step.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+
+  - name: fct_orders
+    description: Order fact table, incrementally merged on order_id.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests: [not_null]
+      - name: current_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [placed, paid, shipped, delivered, cancelled, refunded]
+      - name: currency
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fx_rates')
+                field: currency
+      - name: amount_eur
+        data_tests: [not_null]
+
+  - name: agg_hourly_sales
+    description: Hourly sales KPIs per country.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            columns: [order_hour, country]
+    columns:
+      - name: orders_placed
+        data_tests: [not_null]

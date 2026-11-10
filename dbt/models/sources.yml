@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: staging
+    description: Validated tables loaded by the Airflow pipeline.
+    schema: staging
+    loaded_at_field: loaded_at
+    freshness:
+      warn_after: {count: 2, period: hour}
+      error_after: {count: 6, period: hour}
+    tables:
+      - name: order_events
+        description: One row per validated, de-duplicated order event.
+        columns:
+          - name: event_id
+            data_tests: [unique, not_null]
+      - name: orders
+        description: Current state of every order (latest status), maintained with upserts.
+        loaded_at_field: updated_at
+        columns:
+          - name: order_id
+            data_tests: [unique, not_null]

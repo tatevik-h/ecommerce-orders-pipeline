@@ -1,0 +1,22 @@
+[project]
+name = "orders-pipeline"
+version = "0.1.0"
+description = "Hourly e-commerce orders pipeline on Airflow 3, Postgres and dbt"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "dags", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM"]
+ignore = ["S101", "S311"]  # asserts in tests; `random` is fine for synthetic data
+
+[tool.ruff.lint.isort]
+known-first-party = ["orders_pipeline"]

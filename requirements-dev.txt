@@ -1,0 +1,6 @@
+# Local development and CI. Install Airflow with its official constraints file:
+#   pip install -r requirements-dev.txt \
+#     -c https://raw.githubusercontent.com/apache/airflow/constraints-3.4.0/constraints-3.12.txt
+apache-airflow[postgres]==3.4.0
+pytest
+ruff

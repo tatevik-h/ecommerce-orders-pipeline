@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  AIRFLOW_VERSION: "3.4.0"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: warehouse
+          POSTGRES_PASSWORD: warehouse
+          POSTGRES_DB: warehouse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U warehouse"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      AIRFLOW_HOME: /tmp/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      WAREHOUSE_TEST_DSN: postgresql://warehouse:warehouse@localhost:5432/warehouse_test
+      WAREHOUSE_HOST: localhost
+      WAREHOUSE_PORT: "5432"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install Airflow (with official constraints) and test tools
+        run: |
+          pip install -r requirements-dev.txt \
+            -c "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+
+      - name: Create test database
+        run: PGPASSWORD=warehouse psql -h localhost -U warehouse -c "CREATE DATABASE warehouse_test"
+
+      - name: Unit, integration and DAG integrity tests
+        run: pytest -v
+
+      - name: Load 4 days of hourly batches
+        run: PYTHONPATH=src python scripts/run_batches.py --start 2026-11-01T00:00:00+00:00 --hours 96
+
+      - name: dbt build and freshness
+        run: |
+          python -m venv /tmp/dbt_venv
+          /tmp/dbt_venv/bin/pip install dbt-postgres==1.11.0
+          cd dbt
+          /tmp/dbt_venv/bin/dbt build --profiles-dir .
+          /tmp/dbt_venv/bin/dbt source freshness --profiles-dir .

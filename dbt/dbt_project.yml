@@ -1,0 +1,28 @@
+name: orders_dbt
+version: "0.1.0"
+config-version: 2
+profile: orders_dbt
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  orders_dbt:
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
+
+seeds:
+  orders_dbt:
+    +schema: reference
+    fx_rates:
+      +column_types:
+        currency: char(3)
+        rate_to_eur: numeric(12,6)
